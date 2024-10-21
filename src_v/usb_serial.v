@@ -19,6 +19,7 @@ module usb_serial
     , input           ulpi_nxt_i
     , input           ulpi_dir_i
     , input           ulpi_clk60_i
+    , input           reset_in 
     , output          reset_out
 );
 
@@ -36,9 +37,16 @@ reg [3:0] count_q = 4'b0;
 reg       rst_q   = 1'b1;
 
 always @(posedge usb_clk_w) 
-if (count_q != 4'hF)
+if (reset_in) 
+    count_q <= 0;
+else if (count_q != 4'hF)
     count_q <= count_q + 4'd1;
-else
+
+
+always @(posedge usb_clk_w) 
+if (reset_in) 
+    rst_q <= 1'b1;
+else if (count_q == 4'hF)
     rst_q <= 1'b0;
 
 assign usb_rst_w = rst_q;
@@ -100,6 +108,6 @@ u_usb
     ,.rx_o(uart_rx_o)
 );
 
-assign ulpi_reset_o = 1'b1;
+assign ulpi_reset_o = !reset_in;
 
 endmodule
